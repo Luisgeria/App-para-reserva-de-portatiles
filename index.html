@@ -6,12 +6,14 @@
     <meta name="description" content="Sistema de reserva de portátiles en tiempo real para CEIP Puente de Simancas">
     <meta name="theme-color" content="#3b82f6">
     
-    <!-- PWA Tags -->
+    <!-- PWA Tags - Sin Service Worker problemático -->
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Reserva Portátiles">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
     
     <title>Reserva de Portátiles - CEIP Puente de Simancas</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -34,23 +36,28 @@
             transform: translateX(-50%); 
             z-index: 100;
             display: none;
+            animation: slideUp 0.3s ease-out;
         }
         #install-banner.show { display: block; }
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <!-- Banner de instalación PWA -->
-    <div id="install-banner" class="bg-blue-600 text-white px-6 py-4 rounded-2xl shadow-2xl max-w-sm">
+    <div id="install-banner" class="bg-blue-600 text-white px-6 py-4 rounded-2xl shadow-2xl max-w-sm mx-4">
         <div class="flex items-center gap-4">
             <div class="flex-1">
                 <p class="font-bold text-sm">📱 Instalar App</p>
                 <p class="text-xs opacity-90">Accede más rápido desde tu pantalla de inicio</p>
             </div>
-            <button id="install-button" class="bg-white text-blue-600 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-50">
+            <button id="install-button" class="bg-white text-blue-600 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-50 transition-all active:scale-95">
                 Instalar
             </button>
-            <button id="close-banner" class="text-white opacity-70 hover:opacity-100">✕</button>
+            <button id="close-banner" class="text-white opacity-70 hover:opacity-100 text-xl leading-none">✕</button>
         </div>
     </div>
 
@@ -138,26 +145,26 @@
         </div>
     </div>
 
-    <!-- Registrar Service Worker -->
+    <!-- PWA Install Logic - SIN Service Worker -->
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
-                .then(() => console.log('PWA: Service Worker registrado'))
-                .catch(err => console.log('PWA: Error al registrar Service Worker', err));
-        }
-
         // Detectar si la app puede instalarse
         let deferredPrompt;
+        
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            document.getElementById('install-banner').classList.add('show');
+            
+            // Mostrar banner solo en móvil
+            if (window.innerWidth <= 768) {
+                document.getElementById('install-banner').classList.add('show');
+            }
         });
 
         document.getElementById('install-button').addEventListener('click', async () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response: ${outcome}`);
                 deferredPrompt = null;
                 document.getElementById('install-banner').classList.remove('show');
             }
@@ -165,7 +172,15 @@
 
         document.getElementById('close-banner').addEventListener('click', () => {
             document.getElementById('install-banner').classList.remove('show');
+            localStorage.setItem('installBannerDismissed', 'true');
         });
+
+        // No mostrar banner si ya fue cerrado
+        if (localStorage.getItem('installBannerDismissed') === 'true') {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+            });
+        }
     </script>
 
     <script type="module">

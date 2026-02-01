@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de reserva de portátiles en tiempo real para CEIP Puente de Simancas">
+    <meta name="theme-color" content="#3b82f6">
+    
+    <!-- PWA Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Reserva Portátiles">
+    
+    <title>Reserva de Portátiles - CEIP Puente de Simancas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
+        body { font-family: 'Outfit', sans-serif; background-color: #f1f5f9; }
+        .period-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 1.25rem; border: 2px solid #e2e8f0; }
+        .reserved { background-color: #fee2e2; border-color: #fca5a5; }
+        .available { background-color: #ffffff; cursor: pointer; }
+        .available:hover { border-color: #3b82f6; transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(8px); }
+        .modal.active { display: flex; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; transition: background-color 0.3s; }
+        
+        /* Banner de instalación PWA */
+        #install-banner { 
+            position: fixed; 
+            bottom: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            z-index: 100;
+            display: none;
+        }
+        #install-banner.show { display: block; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Banner de instalación PWA -->
+    <div id="install-banner" class="bg-blue-600 text-white px-6 py-4 rounded-2xl shadow-2xl max-w-sm">
+        <div class="flex items-center gap-4">
+            <div class="flex-1">
+                <p class="font-bold text-sm">📱 Instalar App</p>
+                <p class="text-xs opacity-90">Accede más rápido desde tu pantalla de inicio</p>
+            </div>
+            <button id="install-button" class="bg-white text-blue-600 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-50">
+                Instalar
+            </button>
+            <button id="close-banner" class="text-white opacity-70 hover:opacity-100">✕</button>
+        </div>
+    </div>
+
+    <div class="max-w-xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-2">CEIP Puente de Simancas</h1>
+            <div class="flex items-center justify-center gap-4">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center">
+                    <span id="conn-dot" class="status-dot bg-slate-300"></span> 
+                    <span id="conn-text">Estableciendo conexión...</span>
+                </span>
+            </div>
+        </header>
+
+        <!-- Instrucciones -->
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-6 shadow-sm border border-blue-100 mb-6">
+            <h2 class="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                Instrucciones de uso
+            </h2>
+            <ul class="space-y-2 text-xs text-slate-700">
+                <li class="flex items-start gap-2">
+                    <span class="text-blue-600 font-black mt-0.5">1.</span>
+                    <span>Haz clic en un tramo horario <strong>disponible</strong> para reservar los portátiles.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-blue-600 font-black mt-0.5">2.</span>
+                    <span>Completa tu nombre y curso en el formulario que aparece.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-blue-600 font-black mt-0.5">3.</span>
+                    <span>Solo tú podrás <strong>liberar</strong> tu reserva desde este dispositivo.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-red-600 font-black mt-0.5">⚠️</span>
+                    <span><strong>Importante:</strong> Si borras los datos del navegador o cambias de dispositivo, no podrás liberar tu reserva.</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 mb-8 flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fecha de hoy</p>
+                <p id="date-display" class="text-lg font-bold text-blue-600 capitalize">...</p>
+            </div>
+            <button onclick="window.location.reload()" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-600 transition-all active:scale-90">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </button>
+        </div>
+
+        <div id="periods-container" class="space-y-4">
+            <div class="text-center py-10 text-slate-400 animate-pulse">Sincronizando horarios...</div>
+        </div>
+
+        <div class="mt-8 text-center space-y-2">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Base de Datos en Tiempo Real Activa</p>
+            <p class="text-[9px] text-slate-500 font-semibold">App elaborada por @luisgeria · Enero 2026</p>
+        </div>
+    </div>
+
+    <!-- Modal Reserva -->
+    <div id="reserve-modal" class="modal">
+        <div class="bg-white w-full max-w-sm m-4 p-8 rounded-[2.5rem] shadow-2xl" id="modal-content">
+            <h3 class="text-2xl font-black text-slate-900 mb-2">Nueva Reserva</h3>
+            <p id="modal-time-label" class="text-blue-600 font-bold mb-8 uppercase tracking-widest text-xs"></p>
+            
+            <form id="reserve-form" class="space-y-5">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Nombre Profesor/a</label>
+                    <input type="text" id="profesor-name" required placeholder="Nombre completo" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Curso / Grupo</label>
+                    <input type="text" id="curso-name" required placeholder="Ej. 6ºA" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-4 font-bold text-slate-400 hover:text-slate-600">Cancelar</button>
+                    <button type="submit" id="submit-btn" class="flex-1 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg hover:bg-blue-700 active:scale-95 transition-all">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Registrar Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(() => console.log('PWA: Service Worker registrado'))
+                .catch(err => console.log('PWA: Error al registrar Service Worker', err));
+        }
+
+        // Detectar si la app puede instalarse
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-banner').classList.add('show');
+        });
+
+        document.getElementById('install-button').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                document.getElementById('install-banner').classList.remove('show');
+            }
+        });
+
+        document.getElementById('close-banner').addEventListener('click', () => {
+            document.getElementById('install-banner').classList.remove('show');
+        });
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+        // Tu configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlW7S4tpn4YYkoov1Uq93KFmT8cY8Uzms",
+            authDomain: "app-reserva-de-portatiles.firebaseapp.com",
+            databaseURL: "https://app-reserva-de-portatiles-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "app-reserva-de-portatiles",
+            storageBucket: "app-reserva-de-portatiles.firebasestorage.app",
+            messagingSenderId: "170712420790",
+            appId: "1:170712420790:web:e52d1831be2985c6af3117"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        const periods = [
+            { id: 'p1', h: "09:00 - 10:00" }, 
+            { id: 'p2', h: "10:00 - 11:00" },
+            { id: 'p3', h: "11:00 - 12:00" }, 
+            { id: 'p4', h: "12:30 - 13:00" },
+            { id: 'p5', h: "13:00 - 13:30" }, 
+            { id: 'p6', h: "13:30 - 14:00" }
+        ];
+
+        let reserves = {};
+        let selectedId = null;
+        let userId = null;
+        const today = new Date().toISOString().split('T')[0];
+
+        // Generar o recuperar ID único de usuario
+        function getUserId() {
+            let id = localStorage.getItem('userId');
+            if (!id) {
+                id = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('userId', id);
+            }
+            return id;
+        }
+
+        userId = getUserId();
+        updateConnectionStatus('connecting', 'Conectando...');
+
+        const reservasRef = ref(database, `reservas/${today}`);
+
+        onValue(reservasRef, (snapshot) => {
+            reserves = {};
+            const data = snapshot.val();
+            
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    reserves[data[key].slotId] = data[key];
+                });
+            }
+            
+            updateConnectionStatus('connected', 'Conectado');
+            render();
+        }, (error) => {
+            console.error("Error de conexión:", error);
+            updateConnectionStatus('error', 'Error de conexión');
+            render();
+        });
+
+        function updateConnectionStatus(status, text) {
+            const dot = document.getElementById('conn-dot');
+            const textEl = document.getElementById('conn-text');
+            
+            if (status === 'connected') {
+                dot.className = 'status-dot bg-green-500';
+            } else if (status === 'connecting') {
+                dot.className = 'status-dot bg-yellow-500';
+            } else {
+                dot.className = 'status-dot bg-red-500';
+            }
+            
+            textEl.innerText = text;
+        }
+
+        function render() {
+            const container = document.getElementById('periods-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            periods.forEach(p => {
+                const data = reserves[p.id];
+                const card = document.createElement('div');
+                card.className = `period-card p-6 flex items-center justify-between ${data ? 'reserved' : 'available'}`;
+                
+                const canLiberate = data && data.userId === userId;
+                
+                card.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold uppercase tracking-widest ${data ? 'text-red-500' : 'text-slate-400'}">Tramo horario</span>
+                        <span class="text-xl font-black text-slate-800">${p.h}</span>
+                    </div>
+                    ${data ? `
+                        <div class="text-right">
+                            <p class="font-black text-slate-900 text-lg leading-tight">${data.profe}</p>
+                            <p class="text-slate-500 text-xs font-bold">${data.curso}</p>
+                            ${canLiberate ? `
+                                <button onclick="window.liberar('${p.id}')" class="mt-3 text-[10px] bg-red-100 text-red-600 px-3 py-1.5 rounded-xl font-black hover:bg-red-200 transition-all uppercase tracking-tighter">Liberar</button>
+                            ` : `
+                                <div class="mt-3 text-[10px] text-slate-400 px-3 py-1.5 rounded-xl font-black uppercase tracking-tighter">Reservado</div>
+                            `}
+                        </div>
+                    ` : `
+                        <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-blue-100">Disponible</div>
+                    `}
+                `;
+
+                if (!data) card.onclick = () => openModal(p.id, p.h);
+                container.appendChild(card);
+            });
+        }
+
+        window.openModal = (id, label) => {
+            selectedId = id;
+            document.getElementById('modal-time-label').innerText = label;
+            document.getElementById('reserve-modal').classList.add('active');
+        };
+
+        window.closeModal = () => {
+            document.getElementById('reserve-modal').classList.remove('active');
+            document.getElementById('reserve-form').reset();
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = "Confirmar";
+            btn.disabled = false;
+        };
+
+        window.liberar = async (slotId) => {
+            const reserva = reserves[slotId];
+            if (!reserva || reserva.userId !== userId) {
+                alert('Solo quien reservó puede liberar este horario.');
+                return;
+            }
+
+            if (confirm('¿Quieres liberar este horario?')) {
+                try {
+                    const slotRef = ref(database, `reservas/${today}/${slotId}`);
+                    await remove(slotRef);
+                } catch (e) { 
+                    console.error("Error liberando:", e);
+                    alert("Error al liberar el horario. Intenta de nuevo.");
+                }
+            }
+        };
+
+        document.getElementById('reserve-form').onsubmit = async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = "Guardando...";
+            btn.disabled = true;
+
+            try {
+                const reserva = {
+                    slotId: selectedId,
+                    date: today,
+                    profe: document.getElementById('profesor-name').value,
+                    curso: document.getElementById('curso-name').value,
+                    timestamp: Date.now(),
+                    userId: userId
+                };
+
+                const slotRef = ref(database, `reservas/${today}/${selectedId}`);
+                await set(slotRef, reserva);
+                closeModal();
+            } catch (err) {
+                console.error("Error al guardar:", err);
+                alert("Error al guardar la reserva. Verifica tu conexión.");
+                btn.innerText = "Reintentar";
+                btn.disabled = false;
+            }
+        };
+
+        document.getElementById('date-display').innerText = new Date().toLocaleDateString('es-ES', { 
+            weekday: 'long', 
+            day: 'numeric', 
+            month: 'long' 
+        });
+    </script>
+</body>
+</html>

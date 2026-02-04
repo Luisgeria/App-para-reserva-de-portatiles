@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="description" content="Sistema de reserva de portátiles en tiempo real para CEIP Puente de Simancas">
-    <meta name="theme-color" content="#3b82f6">
+    <meta name="theme-color" content="#16a34a">
     
     <!-- PWA Tags -->
     <link rel="manifest" href="manifest.json">
@@ -18,15 +18,62 @@
     <title>Reserva de Portátiles - CEIP Puente de Simancas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
-        body { font-family: 'Outfit', sans-serif; background-color: #f1f5f9; }
-        .period-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 1.25rem; border: 2px solid #e2e8f0; }
-        .reserved { background-color: #fee2e2; border-color: #fca5a5; }
-        .available { background-color: #ffffff; cursor: pointer; }
-        .available:hover { border-color: #3b82f6; transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(8px); }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap');
+        
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            min-height: 100vh;
+        }
+        
+        .period-card { 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            border-radius: 1.5rem; 
+            border: 3px solid #bbf7d0;
+            min-height: 100px;
+        }
+        
+        .reserved { 
+            background-color: #fee2e2; 
+            border-color: #fca5a5; 
+        }
+        
+        .available { 
+            background-color: #ffffff; 
+            cursor: pointer; 
+        }
+        
+        .available:hover, .available:active { 
+            border-color: #16a34a; 
+            transform: translateY(-3px); 
+            box-shadow: 0 12px 20px -5px rgba(22, 163, 74, 0.3); 
+        }
+        
+        .modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.7); 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 50; 
+            backdrop-filter: blur(8px); 
+        }
+        
         .modal.active { display: flex; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; transition: background-color 0.3s; }
+        
+        .status-dot { 
+            width: 10px; 
+            height: 10px; 
+            border-radius: 50%; 
+            display: inline-block; 
+            margin-right: 8px; 
+            transition: background-color 0.3s; 
+        }
         
         /* Banner de instalación PWA */
         #install-banner { 
@@ -38,108 +85,138 @@
             display: none;
             animation: slideUp 0.3s ease-out;
         }
+        
         #install-banner.show { display: block; }
+        
         @keyframes slideUp {
             from { transform: translateX(-50%) translateY(100px); opacity: 0; }
             to { transform: translateX(-50%) translateY(0); opacity: 1; }
         }
+        
+        /* Tamaños aumentados para móvil */
+        @media (max-width: 768px) {
+            .period-card {
+                min-height: 110px;
+                padding: 1.5rem !important;
+            }
+            
+            .text-mobile-xl {
+                font-size: 1.375rem;
+            }
+            
+            .text-mobile-lg {
+                font-size: 1.125rem;
+            }
+            
+            .text-mobile-base {
+                font-size: 1rem;
+            }
+            
+            .text-mobile-sm {
+                font-size: 0.9375rem;
+            }
+        }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-5 md:p-8">
 
     <!-- Banner de instalación PWA -->
-    <div id="install-banner" class="bg-blue-600 text-white px-6 py-4 rounded-2xl shadow-2xl max-w-sm mx-4">
+    <div id="install-banner" class="bg-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl max-w-sm mx-4">
         <div class="flex items-center gap-4">
             <div class="flex-1">
                 <p class="font-bold text-sm">📱 Instalar App</p>
                 <p class="text-xs opacity-90">Accede más rápido desde tu pantalla de inicio</p>
             </div>
-            <button id="install-button" class="bg-white text-blue-600 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-50 transition-all active:scale-95">
+            <button id="install-button" class="bg-white text-green-600 px-4 py-2 rounded-xl font-bold text-sm hover:bg-green-50 transition-all active:scale-95">
                 Instalar
             </button>
             <button id="close-banner" class="text-white opacity-70 hover:opacity-100 text-xl leading-none">✕</button>
         </div>
     </div>
 
-    <div class="max-w-xl mx-auto">
+    <div class="max-w-2xl mx-auto">
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-2">CEIP Puente de Simancas</h1>
+            <h1 class="text-4xl md:text-5xl font-black text-green-800 tracking-tight mb-3">CEIP Puente de Simancas</h1>
             <div class="flex items-center justify-center gap-4">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center">
+                <span class="text-xs md:text-sm font-bold text-green-600 uppercase tracking-widest flex items-center">
                     <span id="conn-dot" class="status-dot bg-slate-300"></span> 
                     <span id="conn-text">Estableciendo conexión...</span>
                 </span>
             </div>
         </header>
 
-        <!-- Instrucciones con fuente más grande -->
-        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-6 shadow-sm border border-blue-100 mb-6">
-            <h2 class="text-base font-black text-slate-800 mb-4 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+        <!-- Instrucciones con tonos verdes -->
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-6 md:p-7 shadow-md border-2 border-green-200 mb-7">
+            <h2 class="text-lg md:text-xl font-black text-green-900 mb-5 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-green-600" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                 </svg>
                 Instrucciones de uso
             </h2>
-            <ul class="space-y-3 text-sm text-slate-700 leading-relaxed">
+            <ul class="space-y-4 text-mobile-sm md:text-base text-slate-700 leading-relaxed">
                 <li class="flex items-start gap-3">
-                    <span class="text-blue-600 font-black text-base mt-0.5">1.</span>
+                    <span class="text-green-600 font-black text-xl mt-0.5">1.</span>
                     <span>Haz clic en un tramo horario <strong>disponible</strong> para reservar los portátiles.</span>
                 </li>
                 <li class="flex items-start gap-3">
-                    <span class="text-blue-600 font-black text-base mt-0.5">2.</span>
+                    <span class="text-green-600 font-black text-xl mt-0.5">2.</span>
                     <span>Completa tu nombre y curso en el formulario que aparece.</span>
                 </li>
                 <li class="flex items-start gap-3">
-                    <span class="text-blue-600 font-black text-base mt-0.5">3.</span>
+                    <span class="text-green-600 font-black text-xl mt-0.5">3.</span>
                     <span>Solo tú podrás <strong>liberar</strong> tu reserva desde este dispositivo.</span>
                 </li>
                 <li class="flex items-start gap-3">
-                    <span class="text-red-600 font-black text-base mt-0.5">⚠️</span>
+                    <span class="text-red-600 font-black text-xl mt-0.5">⚠️</span>
                     <span><strong>Importante:</strong> Si borras los datos del navegador o cambias de dispositivo, no podrás liberar tu reserva.</span>
                 </li>
             </ul>
         </div>
 
-        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 mb-8 flex items-center justify-between">
+        <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-green-200 mb-8 flex items-center justify-between">
             <div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fecha de hoy</p>
-                <p id="date-display" class="text-lg font-bold text-blue-600 capitalize">...</p>
+                <p class="text-xs md:text-sm font-bold text-green-600 uppercase tracking-widest mb-1">Fecha de hoy</p>
+                <p id="date-display" class="text-mobile-lg md:text-xl font-bold text-green-700 capitalize">...</p>
             </div>
-            <button onclick="window.location.reload()" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-600 transition-all active:scale-90">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <button onclick="window.location.reload()" class="p-3 bg-green-50 hover:bg-green-100 rounded-2xl text-green-700 transition-all active:scale-90">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
             </button>
         </div>
 
-        <div id="periods-container" class="space-y-4">
-            <div class="text-center py-10 text-slate-400 animate-pulse">Sincronizando horarios...</div>
+        <div id="periods-container" class="space-y-5">
+            <div class="text-center py-12 text-green-500 animate-pulse text-lg font-semibold">Sincronizando horarios...</div>
         </div>
 
-        <div class="mt-8 text-center space-y-2">
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Base de Datos en Tiempo Real Activa</p>
-            <p class="text-[9px] text-slate-500 font-semibold">App elaborada por @luisgeria · Enero 2026</p>
+        <div class="mt-10 text-center space-y-2">
+            <p class="text-xs text-green-600 font-bold uppercase tracking-widest">Base de Datos en Tiempo Real Activa</p>
+            <p class="text-xs text-green-700 font-semibold">App elaborada por @luisgeria · Enero 2026</p>
         </div>
     </div>
 
     <!-- Modal Reserva -->
     <div id="reserve-modal" class="modal">
-        <div class="bg-white w-full max-w-sm m-4 p-8 rounded-[2.5rem] shadow-2xl" id="modal-content">
-            <h3 class="text-2xl font-black text-slate-900 mb-2">Nueva Reserva</h3>
-            <p id="modal-time-label" class="text-blue-600 font-bold mb-8 uppercase tracking-widest text-xs"></p>
+        <div class="bg-white w-full max-w-md m-5 p-8 rounded-[2.5rem] shadow-2xl" id="modal-content">
+            <h3 class="text-2xl md:text-3xl font-black text-green-900 mb-2">Nueva Reserva</h3>
+            <p id="modal-time-label" class="text-green-600 font-bold mb-8 uppercase tracking-widest text-sm"></p>
             
-            <form id="reserve-form" class="space-y-5">
+            <form id="reserve-form" class="space-y-6">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Nombre Profesor/a</label>
-                    <input type="text" id="profesor-name" required placeholder="Nombre completo" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all">
+                    <label class="block text-xs md:text-sm font-bold text-green-700 uppercase mb-3 ml-1">Nombre Profesor/a</label>
+                    <input type="text" id="profesor-name" required placeholder="Nombre completo" 
+                        class="w-full text-base md:text-lg bg-green-50 border-2 border-green-200 rounded-2xl p-4 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Curso / Grupo</label>
-                    <input type="text" id="curso-name" required placeholder="Ej. 6ºA" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all">
+                    <label class="block text-xs md:text-sm font-bold text-green-700 uppercase mb-3 ml-1">Curso / Grupo</label>
+                    <input type="text" id="curso-name" required placeholder="Ej. 6ºA" 
+                        class="w-full text-base md:text-lg bg-green-50 border-2 border-green-200 rounded-2xl p-4 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all">
                 </div>
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeModal()" class="flex-1 py-4 font-bold text-slate-400 hover:text-slate-600">Cancelar</button>
-                    <button type="submit" id="submit-btn" class="flex-1 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg hover:bg-blue-700 active:scale-95 transition-all">Confirmar</button>
+                <div class="flex gap-4 pt-4">
+                    <button type="button" onclick="closeModal()" 
+                        class="flex-1 py-4 font-bold text-base text-slate-500 hover:text-slate-700 transition-colors">Cancelar</button>
+                    <button type="submit" id="submit-btn" 
+                        class="flex-1 py-4 text-base bg-green-600 text-white font-bold rounded-2xl shadow-lg hover:bg-green-700 active:scale-95 transition-all">Confirmar</button>
                 </div>
             </form>
         </div>
@@ -164,7 +241,6 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response: ${outcome}`);
                 deferredPrompt = null;
                 document.getElementById('install-banner').classList.remove('show');
             }
@@ -172,39 +248,30 @@
 
         document.getElementById('close-banner').addEventListener('click', () => {
             document.getElementById('install-banner').classList.remove('show');
-            localStorage.setItem('installBannerDismissed', 'true');
         });
-
-        // No mostrar banner si ya fue cerrado
-        if (localStorage.getItem('installBannerDismissed') === 'true') {
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-            });
-        }
     </script>
 
+    <!-- Firebase Setup -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Tu configuración de Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyAlW7S4tpn4YYkoov1Uq93KFmT8cY8Uzms",
-            authDomain: "app-reserva-de-portatiles.firebaseapp.com",
-            databaseURL: "https://app-reserva-de-portatiles-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "app-reserva-de-portatiles",
-            storageBucket: "app-reserva-de-portatiles.firebasestorage.app",
-            messagingSenderId: "170712420790",
-            appId: "1:170712420790:web:e52d1831be2985c6af3117"
+            apiKey: "AIzaSyDsLpYMzXa9wQ_3tK_VuaRnM7JKRa14fxw",
+            authDomain: "portatiles-37aa8.firebaseapp.com",
+            databaseURL: "https://portatiles-37aa8-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "portatiles-37aa8",
+            storageBucket: "portatiles-37aa8.firebasestorage.app",
+            messagingSenderId: "754098935856",
+            appId: "1:754098935856:web:f1bbcf2c2f32f2fcd5b354"
         };
 
-        // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
         const periods = [
-            { id: 'p1', h: "09:00 - 10:00" }, 
-            { id: 'p2', h: "10:00 - 11:00" },
+            { id: 'p1', h: "09:30 - 10:30" }, 
+            { id: 'p2', h: "10:30 - 11:00" }, 
             { id: 'p3', h: "11:00 - 12:00" }, 
             { id: 'p4', h: "12:30 - 13:00" },
             { id: 'p5', h: "13:00 - 13:30" }, 
@@ -278,21 +345,21 @@
                 
                 card.innerHTML = `
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold uppercase tracking-widest ${data ? 'text-red-500' : 'text-slate-400'}">Tramo horario</span>
-                        <span class="text-xl font-black text-slate-800">${p.h}</span>
+                        <span class="text-xs md:text-sm font-bold uppercase tracking-widest ${data ? 'text-red-500' : 'text-green-600'} mb-1">Tramo horario</span>
+                        <span class="text-mobile-xl md:text-2xl font-black text-slate-800">${p.h}</span>
                     </div>
                     ${data ? `
                         <div class="text-right">
-                            <p class="font-black text-slate-900 text-lg leading-tight">${data.profe}</p>
-                            <p class="text-slate-500 text-xs font-bold">${data.curso}</p>
+                            <p class="font-black text-slate-900 text-mobile-lg md:text-xl leading-tight mb-1">${data.profe}</p>
+                            <p class="text-slate-500 text-sm md:text-base font-bold mb-2">${data.curso}</p>
                             ${canLiberate ? `
-                                <button onclick="window.liberar('${p.id}')" class="mt-3 text-[10px] bg-red-100 text-red-600 px-3 py-1.5 rounded-xl font-black hover:bg-red-200 transition-all uppercase tracking-tighter">Liberar</button>
+                                <button onclick="window.liberar('${p.id}')" class="mt-2 text-xs md:text-sm bg-red-100 text-red-600 px-4 py-2 rounded-xl font-black hover:bg-red-200 active:bg-red-300 transition-all uppercase tracking-tight">Liberar</button>
                             ` : `
-                                <div class="mt-3 text-[10px] text-slate-400 px-3 py-1.5 rounded-xl font-black uppercase tracking-tighter">Reservado</div>
+                                <div class="mt-2 text-xs md:text-sm text-slate-400 px-4 py-2 rounded-xl font-black uppercase tracking-tight">Reservado</div>
                             `}
                         </div>
                     ` : `
-                        <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-blue-100">Disponible</div>
+                        <div class="bg-green-100 text-green-700 px-5 py-3 rounded-2xl font-black text-xs md:text-sm uppercase tracking-widest border-2 border-green-200">Disponible</div>
                     `}
                 `;
 

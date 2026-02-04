@@ -253,25 +253,27 @@
 
     <!-- Firebase Setup -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
+        // Tu configuración de Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyDsLpYMzXa9wQ_3tK_VuaRnM7JKRa14fxw",
-            authDomain: "portatiles-37aa8.firebaseapp.com",
-            databaseURL: "https://portatiles-37aa8-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "portatiles-37aa8",
-            storageBucket: "portatiles-37aa8.firebasestorage.app",
-            messagingSenderId: "754098935856",
-            appId: "1:754098935856:web:f1bbcf2c2f32f2fcd5b354"
+            apiKey: "AIzaSyAlW7S4tpn4YYkoov1Uq93KFmT8cY8Uzms",
+            authDomain: "app-reserva-de-portatiles.firebaseapp.com",
+            databaseURL: "https://app-reserva-de-portatiles-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "app-reserva-de-portatiles",
+            storageBucket: "app-reserva-de-portatiles.firebasestorage.app",
+            messagingSenderId: "170712420790",
+            appId: "1:170712420790:web:e52d1831be2985c6af3117"
         };
 
+        // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
         const periods = [
-            { id: 'p1', h: "09:30 - 10:30" }, 
-            { id: 'p2', h: "10:30 - 11:00" }, 
+            { id: 'p1', h: "09:00 - 10:00" }, 
+            { id: 'p2', h: "10:00 - 11:00" }, 
             { id: 'p3', h: "11:00 - 12:00" }, 
             { id: 'p4', h: "12:30 - 13:00" },
             { id: 'p5', h: "13:00 - 13:30" }, 

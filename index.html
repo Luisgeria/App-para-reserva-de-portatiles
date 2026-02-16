@@ -116,9 +116,109 @@
                 font-size: 0.9375rem;
             }
         }
+
+        /* Admin Modal */
+        #admin-lock-btn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 200;
+            background: rgba(255,255,255,0.85);
+            border: 2px solid #bbf7d0;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 12px rgba(22,163,74,0.15);
+            transition: all 0.2s;
+            backdrop-filter: blur(6px);
+        }
+        #admin-lock-btn:hover {
+            background: #f0fdf4;
+            border-color: #16a34a;
+            transform: scale(1.08);
+            box-shadow: 0 4px 16px rgba(22,163,74,0.25);
+        }
+        #admin-lock-btn.admin-active {
+            background: #16a34a;
+            border-color: #15803d;
+        }
+        #admin-lock-btn.admin-active svg {
+            color: white;
+        }
+        .admin-delete-btn {
+            display: none;
+        }
+        .admin-mode .admin-delete-btn {
+            display: inline-block;
+        }
+        .admin-mode .reserved {
+            border-color: #f87171 !important;
+        }
     </style>
 </head>
 <body class="p-5 md:p-8">
+    <!-- Botón Admin (candado) -->
+    <button id="admin-lock-btn" title="Acceso Administrador" onclick="openAdminLogin()">
+        <svg id="lock-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+    </button>
+
+    <!-- Modal Login Admin -->
+    <div id="admin-login-modal" class="modal">
+        <div class="bg-white w-full max-w-sm m-5 p-8 rounded-[2.5rem] shadow-2xl">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-black text-green-900">Acceso Admin</h3>
+            </div>
+            <p class="text-sm text-slate-500 mb-7 font-semibold">Introduce la contraseña de administrador</p>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-green-700 uppercase mb-3 ml-1">Contraseña</label>
+                    <input type="password" id="admin-password-input" placeholder="••••••••"
+                        class="w-full text-base bg-green-50 border-2 border-green-200 rounded-2xl p-4 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all"
+                        onkeydown="if(event.key==='Enter') checkAdminPassword()">
+                </div>
+                <div id="admin-login-error" class="hidden text-red-500 text-sm font-bold text-center bg-red-50 py-2 px-4 rounded-xl">❌ Contraseña incorrecta</div>
+                <div class="flex gap-4 pt-2">
+                    <button type="button" onclick="closeAdminLogin()" 
+                        class="flex-1 py-4 font-bold text-base text-slate-500 hover:text-slate-700 transition-colors">Cancelar</button>
+                    <button type="button" onclick="checkAdminPassword()"
+                        class="flex-1 py-4 text-base bg-green-600 text-white font-bold rounded-2xl shadow-lg hover:bg-green-700 active:scale-95 transition-all">Entrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Salir Admin -->
+    <div id="admin-logout-modal" class="modal">
+        <div class="bg-white w-full max-w-sm m-5 p-8 rounded-[2.5rem] shadow-2xl text-center">
+            <div class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-green-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-black text-green-900 mb-2">Modo Admin Activo</h3>
+            <p class="text-sm text-slate-500 font-semibold mb-7">Puedes borrar cualquier reserva. ¿Deseas salir del modo administrador?</p>
+            <div class="flex gap-4">
+                <button onclick="closeAdminLogout()" class="flex-1 py-4 font-bold text-base text-slate-500 hover:text-slate-700 transition-colors">Cancelar</button>
+                <button onclick="logoutAdmin()" class="flex-1 py-4 text-base bg-red-500 text-white font-bold rounded-2xl shadow-lg hover:bg-red-600 active:scale-95 transition-all">Salir</button>
+            </div>
+        </div>
+    </div>
+
+
 
     <!-- Banner de instalación PWA -->
     <div id="install-banner" class="bg-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl max-w-sm mx-4">
@@ -136,7 +236,10 @@
 
     <div class="max-w-2xl mx-auto">
         <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-black text-green-800 tracking-tight mb-3">CEIP Puente de Simancas</h1>
+            <div class="flex items-center justify-center gap-4 mb-3">
+                <img src="data:image/png;base64,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" alt="Logo CEIP Puente de Simancas" class="h-14 md:h-16 object-contain rounded-xl shadow-sm" />
+                <h1 class="text-3xl md:text-5xl font-black text-green-800 tracking-tight">CEIP Puente de Simancas</h1>
+            </div>
             <div class="flex items-center justify-center gap-4">
                 <span class="text-xs md:text-sm font-bold text-green-600 uppercase tracking-widest flex items-center">
                     <span id="conn-dot" class="status-dot bg-slate-300"></span> 
@@ -359,6 +462,7 @@
                             ` : `
                                 <div class="mt-2 text-xs md:text-sm text-slate-400 px-4 py-2 rounded-xl font-black uppercase tracking-tight">Reservado</div>
                             `}
+                            <button onclick="window.adminBorrar('${p.id}')" class="admin-delete-btn mt-1 text-xs md:text-sm bg-red-600 text-white px-4 py-2 rounded-xl font-black hover:bg-red-700 active:bg-red-800 transition-all uppercase tracking-tight">🗑 Borrar (Admin)</button>
                         </div>
                     ` : `
                         <div class="bg-green-100 text-green-700 px-5 py-3 rounded-2xl font-black text-xs md:text-sm uppercase tracking-widest border-2 border-green-200">Disponible</div>
@@ -402,6 +506,23 @@
             }
         };
 
+        window.adminBorrar = async (slotId) => {
+            if (!window.isAdminMode()) return;
+            const reserva = reserves[slotId];
+            if (!reserva) return;
+            if (confirm(`¿Borrar la reserva de ${reserva.profe} (${reserva.curso})?`)) {
+                try {
+                    const slotRef = ref(database, `reservas/${today}/${slotId}`);
+                    await remove(slotRef);
+                } catch (e) {
+                    console.error("Error borrando (admin):", e);
+                    alert("Error al borrar la reserva. Intenta de nuevo.");
+                }
+            }
+        };
+
+        window.renderAdmin = () => render();
+
         document.getElementById('reserve-form').onsubmit = async (e) => {
             e.preventDefault();
 
@@ -435,6 +556,61 @@
             day: 'numeric', 
             month: 'long' 
         });
+    </script>
+
+    <!-- Admin Logic -->
+    <script>
+        const ADMIN_PASSWORD = '11223344';
+        let isAdminMode = false;
+
+        function openAdminLogin() {
+            if (isAdminMode) {
+                document.getElementById('admin-logout-modal').classList.add('active');
+            } else {
+                document.getElementById('admin-password-input').value = '';
+                document.getElementById('admin-login-error').classList.add('hidden');
+                document.getElementById('admin-login-modal').classList.add('active');
+                setTimeout(() => document.getElementById('admin-password-input').focus(), 100);
+            }
+        }
+
+        function closeAdminLogin() {
+            document.getElementById('admin-login-modal').classList.remove('active');
+        }
+
+        function closeAdminLogout() {
+            document.getElementById('admin-logout-modal').classList.remove('active');
+        }
+
+        function checkAdminPassword() {
+            const pw = document.getElementById('admin-password-input').value;
+            if (pw === ADMIN_PASSWORD) {
+                isAdminMode = true;
+                closeAdminLogin();
+                activateAdminMode();
+            } else {
+                document.getElementById('admin-login-error').classList.remove('hidden');
+                document.getElementById('admin-password-input').value = '';
+                document.getElementById('admin-password-input').focus();
+            }
+        }
+
+        function activateAdminMode() {
+            document.getElementById('admin-lock-btn').classList.add('admin-active');
+            document.getElementById('periods-container').classList.add('admin-mode');
+            // Rerender to show delete buttons - trigger a re-render by calling the exposed render
+            if (typeof window.renderAdmin === 'function') window.renderAdmin();
+        }
+
+        function logoutAdmin() {
+            isAdminMode = false;
+            document.getElementById('admin-lock-btn').classList.remove('admin-active');
+            document.getElementById('periods-container').classList.remove('admin-mode');
+            closeAdminLogout();
+            if (typeof window.renderAdmin === 'function') window.renderAdmin();
+        }
+
+        window.isAdminMode = () => isAdminMode;
     </script>
 </body>
 </html>
